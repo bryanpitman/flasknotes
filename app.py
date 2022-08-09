@@ -68,15 +68,31 @@ def login_form():
         user = User.authenticate(username, password)
 
         if user:
-            session["user_id"] = user.id  # keep logged in
-            return redirect("/secret")
+            session["user_id"] = user.id  # keep logged in and stores a dictonary?
+            return redirect(f"/users/{username}")
 
         else:
             form.username.errors = ["Bad name/password"]
 
     return render_template("login.html", form=form)
 
-@app.get("/secret")
-def secret():
+@app.get("/users/<username>")
+def user_detail(username):
 
-        return render_template("secret.html")
+    user = User.query.filter_by(username = username).one_or_none()
+
+    if "user_id" not in session:
+        flash("You must be logged in to view!")
+        return redirect("/")
+
+        # alternatively, can return HTTP Unauthorized status:
+        #
+        # from werkzeug.exceptions import Unauthorized
+        # raise Unauthorized()
+
+    else:
+        return render_template("user_details.html", user = user)
+
+
+
+
