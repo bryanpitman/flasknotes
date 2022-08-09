@@ -5,7 +5,7 @@ from wtforms import StringField, SelectField, TextAreaField, BooleanField, Passw
 from wtforms.validators import InputRequired, Optional
 
 
-class AddUserForm(FlaskForm):
+class RegisterForm(FlaskForm):
     """Forms for adding a user."""
 
     username = StringField("username:",
@@ -23,5 +23,14 @@ class AddUserForm(FlaskForm):
     last_name = StringField("last name:",
         validators= [InputRequired()])
 
+
+class LoginForm(FlaskForm):
+    """Forms for adding a user."""
+
+    username = StringField("username:",
+        validators= [InputRequired()])
+
+    password = PasswordField("password:",
+        validators= [InputRequired()])
 
 
