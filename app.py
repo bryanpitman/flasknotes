@@ -3,7 +3,7 @@
 from flask import Flask, redirect, render_template, request, flash, session
 from models import db, connect_db, User
 from flask_debugtoolbar import DebugToolbarExtension
-from forms import RegisterForm, LoginForm
+from forms import RegisterForm, LoginForm, CSRFProtectForm
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "secret"
@@ -24,7 +24,8 @@ def load_root_page():
 
     return redirect("/register")
 
-@app.route('/register', methods = ['GET', 'POST'])
+
+@app.route('/register', methods=['GET', 'POST'])
 def register_form():
     """Register user: produce form & handle form submission."""
 
@@ -37,22 +38,23 @@ def register_form():
         first_name = form.first_name.data
         last_name = form.last_name.data
 
-        new_user = User.register(username = username,
-                      password = password,
-                      first_name = first_name,
-                      last_name = last_name,
-                      email = email)
+        new_user = User.register(username=username,
+                                 password=password,
+                                 first_name=first_name,
+                                 last_name=last_name,
+                                 email=email)
 
         db.session.add(new_user)
         db.session.commit()
 
-        session["user_id"]= new_user.id
+        session["user_id"] = new_user.id
 
         flash(f"Added {username}")
         return redirect("/secret")
 
     else:
-        return render_template("register.html", form = form)
+        return render_template("register.html", form=form)
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login_form():
@@ -68,7 +70,8 @@ def login_form():
         user = User.authenticate(username, password)
 
         if user:
-            session["user_id"] = user.id  # keep logged in and stores a dictonary?
+            # keep logged in and stores a dictonary?
+            session["user_id"] = user.id
             return redirect(f"/users/{username}")
 
         else:
@@ -76,23 +79,29 @@ def login_form():
 
     return render_template("login.html", form=form)
 
+
 @app.get("/users/<username>")
 def user_detail(username):
+    """Check if user is logged in and Show user details"""
 
-    user = User.query.filter_by(username = username).one_or_none()
-
+    user = User.query.filter_by(username=username).one_or_none()
+    form = CSRFProtectForm()
     if "user_id" not in session:
         flash("You must be logged in to view!")
         return redirect("/")
 
-        # alternatively, can return HTTP Unauthorized status:
-        #
-        # from werkzeug.exceptions import Unauthorized
-        # raise Unauthorized()
-
     else:
-        return render_template("user_details.html", user = user)
+        return render_template("user_details.html", user=user, form=form)
 
 
+@app.post("/logout")
+def logout():
+    """Logs user out and redirects to homepage."""
 
+    form = CSRFProtectForm()
 
+    if form.validate_on_submit():
+        # Remove "user_id" if present, but no errors if it wasn't
+        session.pop("user_id", None)
+
+    return redirect("/")
