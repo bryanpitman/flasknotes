@@ -3,7 +3,7 @@
 
 
 {% block content %}
-{% if 'user_id' in session %}
+
 
 
 <h2>{{ user.first_name }} {{ user.last_name }}</h2>
@@ -15,7 +15,7 @@
     {{form.hidden_tag()}}
     <button type="submit" class="btn btn-primary">Logout</button>
   </form>
-  
-{% endif %}
+
+
 
 {% endblock %}

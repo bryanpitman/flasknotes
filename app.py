@@ -47,10 +47,10 @@ def register_form():
         db.session.add(new_user)
         db.session.commit()
 
-        session["user_id"] = new_user.id
+        session["username"] = new_user.username
 
-        flash(f"Added {username}")
-        return redirect("/secret")
+        flash(f"Added {new_user.username}")
+        return redirect(f"/users/{new_user.username}")
 
     else:
         return render_template("register.html", form=form)
@@ -59,6 +59,10 @@ def register_form():
 @app.route("/login", methods=["GET", "POST"])
 def login_form():
     """Produce login form or handle login."""
+
+    #if logged in redirect to the user details page
+    if "username" in session:
+        return redirect(f"/users/{session['username']}")
 
     form = LoginForm()
 
@@ -71,7 +75,8 @@ def login_form():
 
         if user:
             # keep logged in and stores a dictonary?
-            session["user_id"] = user.id
+            # change to username below
+            session["username"] = user.username  # {"user_id": 1}
             return redirect(f"/users/{username}")
 
         else:
@@ -84,14 +89,14 @@ def login_form():
 def user_detail(username):
     """Check if user is logged in and Show user details"""
 
+    if "username" not in session or session["username"] != username:
+        flash("You must be logged in to view!")
+        return redirect("/login")
+
     user = User.query.filter_by(username=username).one_or_none()
     form = CSRFProtectForm()
-    if "user_id" not in session:
-        flash("You must be logged in to view!")
-        return redirect("/")
 
-    else:
-        return render_template("user_details.html", user=user, form=form)
+    return render_template("user_details.html", user=user, form=form)
 
 
 @app.post("/logout")
@@ -102,6 +107,6 @@ def logout():
 
     if form.validate_on_submit():
         # Remove "user_id" if present, but no errors if it wasn't
-        session.pop("user_id", None)
+        session.pop("username", None)
 
     return redirect("/")
