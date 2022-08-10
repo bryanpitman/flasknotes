@@ -1,9 +1,9 @@
 """flask app for Notes application"""
 
 from flask import Flask, redirect, render_template, request, flash, session
-from models import db, connect_db, User
+from models import db, connect_db, User, Note
 from flask_debugtoolbar import DebugToolbarExtension
-from forms import RegisterForm, LoginForm, CSRFProtectForm
+from forms import RegisterForm, LoginForm, CSRFProtectForm, AddNoteForm
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "secret"
@@ -60,7 +60,7 @@ def register_form():
 def login_form():
     """Produce login form or handle login."""
 
-    #if logged in redirect to the user details page
+    # if logged in redirect to the user details page
     if "username" in session:
         return redirect(f"/users/{session['username']}")
 
@@ -86,7 +86,7 @@ def login_form():
 
 
 @app.get("/users/<username>")
-def user_detail(username):
+def user_details(username):
     """Check if user is logged in and Show user details"""
 
     if "username" not in session or session["username"] != username:
@@ -110,3 +110,73 @@ def logout():
         session.pop("username", None)
 
     return redirect("/")
+
+
+@app.get("/users/<username>")
+def user_details_notes(username):
+    """Check if user is logged in and show user detail and notes"""
+
+    if "username" not in session or session["username"] != username:
+        flash("You must be logged in to view!")
+        return redirect("/login")
+
+    user = User.query.filter_by(username=username).one_or_none()
+    notes = Note.query.filter_by(owner=user.id).all()
+    form = CSRFProtectForm()
+
+    return render_template("user_details.html", notes=notes, form=form)
+
+
+@app.post("/users/<username>/delete")
+def delete_user(username):
+    """delete user"""
+
+    if "username" not in session or session["username"] != username:
+        flash("You must be logged in to view!")
+        return redirect("/login")
+
+    form = CSRFProtectForm()
+
+    if form.validate_on_submit():
+        # clear session
+        session.pop("username", None)  # pop first or last? doesn't matter
+
+        # select user
+        # select all user posts
+        user = User.query.filter_by(username=username).one_or_none()
+        notes = user.notes
+
+        # delete notes then delete user
+        db.session.delete(*notes)
+        db.session.commit()
+
+        db.session.delete(user)
+        db.session.commit()
+
+        return redirect("/")
+
+
+@app.route("/users/<username>/notes/add", methods=["GET", "POST"])
+def add_note_form(username):
+    """Add note for user form"""
+
+    if "username" not in session:
+        return redirect("/login")
+
+    form = AddNoteForm()
+    user = User.query.filter_by(username=username).one_or_none()
+
+    if form.validate_on_submit():
+
+        title = form.title.data
+        content = form.content.data
+
+        note = Note(title=title, content=content, owner=user.id)
+
+        db.session.add(note)
+        db.session.commit()
+
+        return redirect("/users/<username>")
+
+    else:
+        return render_template("add_note.html", form=form, user=user)

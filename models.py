@@ -67,3 +67,32 @@ class User(db.Model):
             return user
         else:
             return False
+
+    @property
+    def full_name(self):
+        """ Set full_name as a property attribute and returns it"""
+
+        return f"{self.first_name} {self.last_name}"
+
+class Note(db.Model):
+    """creates a new note"""
+
+    __tablename__ = 'notes'
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True,
+        autoincrement=True)
+    title = db.Column(
+        db.String(100),
+        nullable=False)
+    content = db.Column(
+        db.Text,
+        nullable=False)
+    owner = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id'),
+        nullable=False)
+
+    user = db.relationship('User', backref='notes')
+

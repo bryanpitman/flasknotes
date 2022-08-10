@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h3>Title: {{ note.title }}</h3>
+
+<p>Content: {{ note.content }}</p>
+
+<p>By: {{ note.user.full_name }} </p>
+
+<div> <a class="btn btn-primary" href="/notes/{{ note.id }}/update"> Edit </a> </div>
+
+<form action="/notes/{{ note.id }}/delete" method="POST">
+  <button class="btn btn-danger" type="submit">Delete</button>
+</form>
+
+<div> <a class="btn btn-primary" href="/users/{{ note.user.username }}/notes/add"> Edit </a> </div>
+
+<form action="/users/{{ note.user.username }}/delete" method="POST">
+  <button class="btn btn-danger" type="submit">Delete User Account</button>
+</form>
+
+{% endblock %}
